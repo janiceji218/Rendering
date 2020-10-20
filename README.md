@@ -48,6 +48,8 @@ For instance:
 * `python cube.py --nx 128` renders ths `cube` scene as a 128 pixel wide image to `cube.png`.  (Small images like this are useful for quick-turnaround testing.)
 * `python three_spheres.py --nx 1024 --outFile three_spheres_1024.png` renders a higher resoution image to a different filename so it won't be overwritten by future default renders.
 
+The Python setup from Assignment 3 will suffice for this assignment, as it includes Pillow and NumPy, which are the only dependencies.
+
 
 ## Implementation strategy
 
