@@ -96,8 +96,32 @@ class Sphere:
           Hit -- the hit data
         """
         # TODO A4 implement this function
-        return no_hit
-
+        D = ray.direction
+        P = ray.origin
+        C = self.center
+        R = self.radius
+        L = C - P
+        tca = np.dot(L, D)
+        if tca < 0:
+            return no_hit
+        discriminate = np.dot(L, L) ** 2  - np.dot(tca, tca)
+        if discriminate < 0 or discriminate > R:
+            return no_hit
+        thc = np.sqrt(R**2 - discriminate**2)
+        t0 = tca - thc
+        t1 = tca + thc
+        p0 = P + t0 * D
+        p1 = P + t1 * D
+        diff0 = np.sum(P - p0)
+        diff1 = np.sum(P - p1)
+        if diff0 > diff1:
+            final_t = t1
+            final_p = p1
+        else:
+            final_t = t0
+            final_p = t1
+        normal = normalize(final_t)
+        return Hit(self, final_t, final_p, normal, self.material)
 
 class Triangle:
 
