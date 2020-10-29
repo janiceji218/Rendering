@@ -96,7 +96,7 @@ class Sphere:
           Hit -- the hit data
         """
         # TODO A4 implement this function
-        D = ray.direction
+        """D = ray.direction
         P = ray.origin
         C = self.center
         R = self.radius
@@ -121,7 +121,7 @@ class Sphere:
             final_t = t0
             final_p = t1
         normal = normalize(final_t)
-        return Hit(self, final_t, final_p, normal, self.material)
+        return Hit(final_t, final_p, normal, self.material)"""
 
 class Triangle:
 
