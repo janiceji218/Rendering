@@ -103,6 +103,8 @@ class Sphere:
         R = self.radius
         B = 2*np.dot(D, E-C)
         A = np.dot(D, D)
+        min_t = ray.start
+        max_t = ray.end
 
         discriminant = B ** 2 - 4 * A * (np.dot(E-C, E-C)-R**2)
 
@@ -112,11 +114,11 @@ class Sphere:
         t0 = (-1*B - np.sqrt(discriminant)) / (2*A)
         t1 = (-1*B + np.sqrt(discriminant)) / (2*A)
 
-        if t0 >= 0 and t1 >= 0:
+        if (t0 >= min_t and t0 <= max_t and t0 <= t1):
             t = t0
-        elif t0 < 0 and t1 >= 0:
+        elif (t1 >= min_t and t1 <= max_t):
             t = t1
-        elif t0 < 0 and t1 < 0:
+        else:
             return no_hit
 
         P = E + t * D
@@ -124,33 +126,6 @@ class Sphere:
         unit_normal = (P - C) / R
 
         return Hit(t, P, unit_normal, self.material)
-
-        """D = ray.direction
-        P = ray.origin
-        C = self.center
-        R = self.radius
-        L = C - P
-        tca = np.dot(L, D)
-        if tca < 0:
-            return no_hit
-        discriminate = np.dot(L, L) ** 2  - np.dot(tca, tca)
-        if discriminate < 0 or discriminate > R:
-            return no_hit
-        thc = np.sqrt(R**2 - discriminate**2)
-        t0 = tca - thc
-        t1 = tca + thc
-        p0 = P + t0 * D
-        p1 = P + t1 * D
-        diff0 = np.sum(P - p0)
-        diff1 = np.sum(P - p1)
-        if diff0 > diff1:
-            final_t = t1
-            final_p = p1
-        else:
-            final_t = t0
-            final_p = t1
-        normal = normalize(final_t)
-        return Hit(final_t, final_p, normal, self.material)"""
 
 
 class Triangle:
