@@ -163,6 +163,9 @@ class Camera:
         self.eye = eye
         self.aspect = aspect
         # TODO A4 implement this constructor to store whatever you need for ray generation
+        self.up = up
+        self.vfov = vfov
+        self.target = target
 
     def generate_ray(self, img_point):
         """Compute the ray corresponding to a point in the image.
@@ -174,7 +177,27 @@ class Camera:
           Ray -- The ray corresponding to that image location (not necessarily normalized)
         """
         # TODO A4 implement this function
-        return Ray(vec([0,0,0]), vec([0,0,1]))
+        i = img_point[0]
+        j = img_point[1]
+        left = -0.5
+        right = 0.5
+        bottom = -0.5
+        top = 0.5
+        eye = self.eye
+        up = self.up
+        vert_angle = np.radians(self.vfov)
+        view_direction = self.target
+        height = top - bottom  #figure out
+        width = right - left #figure out
+        proj_dist = height // 2.0 // np.tan(vert_angle // 2.0) #figure out
+        look_at_pt = self.target #figure out
+        w_vec = normalize(eye - look_at_pt) #figure out
+        u_vec = normalize(np.cross(up, w_vec))
+        v_vec = np.cross(w_vec, u_vec)
+
+        ray_origin = eye
+        ray_direction = ((-1) * proj_dist * w_vec) + i * u_vec + j * v_vec
+        return Ray(ray_origin, ray_direction)
 
 
 class PointLight:
