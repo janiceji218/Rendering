@@ -69,6 +69,7 @@ class Hit:
         self.normal = normal
         self.material = material
 
+
 # Value to represent absence of an intersection
 no_hit = Hit(np.inf)
 
@@ -96,6 +97,34 @@ class Sphere:
           Hit -- the hit data
         """
         # TODO A4 implement this function
+        D = ray.direction
+        E = ray.origin
+        C = self.center
+        R = self.radius
+        B = 2*np.dot(D, E-C)
+        A = np.dot(D, D)
+
+        discriminant = B ** 2 - 4 * A * (np.dot(E-C, E-C)-R**2)
+
+        if discriminant < 0:
+            return no_hit
+
+        t0 = (-1*B - np.sqrt(discriminant)) / (2*A)
+        t1 = (-1*B + np.sqrt(discriminant)) / (2*A)
+
+        if t0 >= 0 and t1 >= 0:
+            t = t0
+        elif t0 < 0 and t1 >= 0:
+            t = t1
+        elif t0 < 0 and t1 < 0:
+            return no_hit
+
+        P = E + t * D
+
+        unit_normal = (P - C) / R
+
+        return Hit(t, P, unit_normal, self.material)
+
         """D = ray.direction
         P = ray.origin
         C = self.center
@@ -123,6 +152,7 @@ class Sphere:
         normal = normalize(final_t)
         return Hit(final_t, final_p, normal, self.material)"""
 
+
 class Triangle:
 
     def __init__(self, vs, material):
@@ -149,7 +179,7 @@ class Triangle:
 
 class Camera:
 
-    def __init__(self, eye=vec([0,0,0]), target=vec([0,0,-1]), up=vec([0,1,0]), 
+    def __init__(self, eye=vec([0, 0, 0]), target=vec([0, 0, -1]), up=vec([0, 1, 0]),
                  vfov=90.0, aspect=1.0):
         """Create a camera with given viewing parameters.
 
@@ -187,11 +217,11 @@ class Camera:
         up = self.up
         vert_angle = np.radians(self.vfov)
         view_direction = self.target
-        height = top - bottom  #figure out
-        width = right - left #figure out
-        proj_dist = height // 2.0 // np.tan(vert_angle // 2.0) #figure out
-        look_at_pt = self.target #figure out
-        w_vec = normalize(eye - look_at_pt) #figure out
+        height = top - bottom  # figure out
+        width = right - left  # figure out
+        proj_dist = height // 2.0 // np.tan(vert_angle // 2.0)  # figure out
+        look_at_pt = self.target  # figure out
+        w_vec = normalize(eye - look_at_pt)  # figure out
         u_vec = normalize(np.cross(up, w_vec))
         v_vec = np.cross(w_vec, u_vec)
 
@@ -223,7 +253,7 @@ class PointLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        return vec([0,0,0])
+        return vec([0, 0, 0])
 
 
 class AmbientLight:
@@ -247,12 +277,12 @@ class AmbientLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        return vec([0,0,0])
+        return vec([0, 0, 0])
 
 
 class Scene:
 
-    def __init__(self, surfs, bg_color=vec([0.2,0.3,0.5])):
+    def __init__(self, surfs, bg_color=vec([0.2, 0.3, 0.5])):
         """Create a scene containing the given objects.
 
         Parameters:
@@ -276,6 +306,7 @@ class Scene:
 
 MAX_DEPTH = 4
 
+
 def shade(ray, hit, scene, lights, depth=0):
     """Compute shading for a ray-surface intersection.
 
@@ -291,7 +322,7 @@ def shade(ray, hit, scene, lights, depth=0):
     of MAX_DEPTH, with zero contribution beyond that depth.
     """
     # TODO A4 implement this function
-    return vec([0,0,0])
+    return vec([0, 0, 0])
 
 
 def render_image(camera, scene, lights, nx, ny):
@@ -306,4 +337,4 @@ def render_image(camera, scene, lights, nx, ny):
       (ny, nx, 3) float32 -- the RGB image
     """
     # TODO A4 implement this function
-    return np.zeros((ny,nx,3), np.float32)
+    return np.zeros((ny, nx, 3), np.float32)
