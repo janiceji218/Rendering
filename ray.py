@@ -276,7 +276,7 @@ class Scene:
         i = no_hit
 
         for s in surfaces:
-            intersect = ray.intersect(s)
+            intersect = s.intersect(ray)
             if (intersect.t < min_t):
                 min_t = intersect.t
                 i = intersect
@@ -320,7 +320,15 @@ def render_image(camera, scene, lights, nx, ny):
       (ny, nx, 3) float32 -- the RGB image
     """
     # TODO A4 implement this function
-
+    img = np.zeros((ny, nx, 3), np.float32)
     bg_color = scene.bg_color
 
-    return np.zeros((ny, nx, 3), np.float32)
+    for x in range(0, nx):
+        for y in range(0, ny):
+            ray = camera.generate_ray((y, x))
+            if (scene.intersect(ray).t < np.inf):
+                img[y][x] = (255, 255, 255)
+            else:
+                img[y][x] = 0
+
+    return img
