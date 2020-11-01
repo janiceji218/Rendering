@@ -191,9 +191,7 @@ class Camera:
         height = 2 * proj_dist * np.tan(self.vfov / 2.0)
         width = self.aspect * height
         left = (-1) * width / 2.0
-        right = width / 2.0
         bottom = (-1) * height / 2.0
-        top = height / 2.0
         u = i * width + left
         v = j * height + bottom
         ray_origin = self.eye
@@ -272,7 +270,18 @@ class Scene:
           Hit -- the hit data
         """
         # TODO A4 implement this function
-        return no_hit
+        surfaces = self.surfs
+
+        min_t = np.inf
+        i = no_hit
+
+        for s in surfaces:
+            intersect = ray.intersect(s)
+            if (intersect.t < min_t):
+                min_t = intersect.t
+                i = intersect
+
+        return i
 
 
 MAX_DEPTH = 4
@@ -292,8 +301,11 @@ def shade(ray, hit, scene, lights, depth=0):
     When mirror reflection is being computed, recursion will only proceed to a depth
     of MAX_DEPTH, with zero contribution beyond that depth.
     """
-    # TODO A4 implement this function
-    return vec([0, 0, 0])
+    bg_color = scene.bg_color
+    material = hit.material
+    diffuse = material.k_d
+    specular = material.k_s
+    specular_exp = material.p
 
 
 def render_image(camera, scene, lights, nx, ny):
@@ -308,4 +320,7 @@ def render_image(camera, scene, lights, nx, ny):
       (ny, nx, 3) float32 -- the RGB image
     """
     # TODO A4 implement this function
+
+    bg_color = scene.bg_color
+
     return np.zeros((ny, nx, 3), np.float32)
