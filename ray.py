@@ -230,8 +230,20 @@ class PointLight:
         diffuse_coeff = hit.material.k_d
         v = (-1) * normalize(ray.direction)
         light_ray = normalize(position - hit.point)
-        output = diffuse_coeff * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
-        return output
+        specular_coeff = hit.material.k_s
+        p = hit.material.p
+
+        #diffuse shading
+        #diffuse_output = diffuse_coeff * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
+        #specular shading
+        #shadRay = Ray(hit.point, position - hit.point)
+        shade_ray = Ray(hit.point, light_ray)
+        if (scene.intersect(shade_ray).t == no_hit):
+            h = (v + light_ray) / np.linalg.norm(v + light_ray)
+            specular_output = (diffuse_coeff + specular_coeff * ((np.dot(normal, h)) ** p)) * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
+            return specular_output
+        else:
+            return (0,0,0)
 
 
 class AmbientLight:
@@ -255,7 +267,10 @@ class AmbientLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        return vec([0, 0, 0])
+        intensity = self.intensity
+        diffuse_coeff = hit.material.k_a
+        output = diffuse_coeff * intensity
+        return output
 
 
 class Scene:
@@ -289,7 +304,6 @@ class Scene:
             if (intersect.t < min_t):
                 min_t = intersect.t
                 i = intersect
-
         return i
 
 
@@ -311,16 +325,12 @@ def shade(ray, hit, scene, lights, depth=0):
     of MAX_DEPTH, with zero contribution beyond that depth.
     """
     bg_color = scene.bg_color
-    material = hit.material
-    diffuse = material.k_d
-    specular = material.k_s
-    specular_exp = material.p
+
     #stub in shading
     if (hit == no_hit):
         return bg_color
     else:
         output = (0,0,0)
-        #diffuse shading
         for light in lights:
             output = output + light.illuminate(ray, hit, scene)
         return output
@@ -339,13 +349,25 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     bg_color = scene.bg_color
-    surf = scene.surfs[0]
+    #step1
+    """surf = scene.surfs[0]
     for x in range(0, nx):
         for y in range(0, ny):
-            ray = camera.generate_ray((y, x))
+            u = (x + 0.5) / nx
+            v = (y + 0.5) / ny
+            ray = camera.generate_ray((u, v))
             if (surf.intersect(ray).t < np.inf):
                 img[y][x] = (255, 255, 255)
             else:
-                img[y][x] = 0
+                img[y][x] = (0,0,0)"""
+
+    surfs = scene.surfs
+    for x in range (0, nx):
+        for y in range(0, ny):
+            u = (x + 0.5) / nx
+            v = (y + 0.5) / ny
+            ray = camera.generate_ray((u, v))
+            hit = scene.intersect(ray)
+            img[y][x] = shade(ray, hit, scene, lights)
 
     return img
