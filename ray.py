@@ -222,7 +222,16 @@ class PointLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        return vec([0, 0, 0])
+        #diffuse shading
+        intensity = self.intensity
+        position = self.position
+        normal = hit.normal
+        dist_to_source = np.linalg.norm(hit.point - position)
+        diffuse_coeff = hit.material.k_d
+        v = (-1) * normalize(ray.direction)
+        light_ray = normalize(position - hit.point)
+        output = diffuse_coeff * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
+        return output
 
 
 class AmbientLight:
@@ -306,7 +315,15 @@ def shade(ray, hit, scene, lights, depth=0):
     diffuse = material.k_d
     specular = material.k_s
     specular_exp = material.p
-
+    #stub in shading
+    if (hit == no_hit):
+        return bg_color
+    else:
+        output = (0,0,0)
+        #diffuse shading
+        for light in lights:
+            output = output + light.illuminate(ray, hit, scene)
+        return output
 
 def render_image(camera, scene, lights, nx, ny):
     """Render a ray traced image.
@@ -322,11 +339,11 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     bg_color = scene.bg_color
-
+    surf = scene.surfs[0]
     for x in range(0, nx):
         for y in range(0, ny):
             ray = camera.generate_ray((y, x))
-            if (scene.intersect(ray).t < np.inf):
+            if (surf.intersect(ray).t < np.inf):
                 img[y][x] = (255, 255, 255)
             else:
                 img[y][x] = 0
