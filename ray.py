@@ -4,13 +4,13 @@ from utils import *
 
 """
 Core implementation of the ray tracer.  This module contains the classes (Sphere, Mesh, etc.)
-that define the contents of scenes, as well as classes (Ray, Hit) and functions (shade) used in 
+that define the contents of scenes, as well as classes (Ray, Hit) and functions (shade) used in
 the rendering algorithm, and the main entry point `render_image`.
 
 In the documentation of these classes, we indicate the expected types of arguments with a
 colon, and use the convention that just writing a tuple means that the expected type is a
 NumPy array of that shape.  Implementations can assume these types are preconditions that
-are met, and if they fail for other type inputs it's an error of the caller.  (This might 
+are met, and if they fail for other type inputs it's an error of the caller.  (This might
 not be the best way to handle such validation in industrial-strength code but we are adopting
 this rule to keep things simple and efficient.)
 """
@@ -149,7 +149,50 @@ class Triangle:
           Hit -- the hit data
         """
         # TODO A4 implement this function
-        return no_hit
+        vs = self.vs
+
+        a = vs[0][0] - vs[1][0]
+        b = vs[0][1] - vs[1][1]
+        c = vs[0][2] - vs[1][2]
+        d = vs[0][0] - vs[2][0]
+        e = vs[0][1] - vs[2][1]
+        f = vs[0][2] - vs[2][2]
+
+        ray_dir = ray.direction
+        ray_orig = ray.origin
+
+        g = ray_dir[0]
+        h = ray_dir[1]
+        i = ray_dir[2]
+        j = vs[0][0] - ray_orig[0]
+        k = vs[0][1] - ray_orig[1]
+        l = vs[0][2] - ray_orig[2]
+
+        M = a * (e * i - h * f) + b * (g * f - d * i) + c * (d * h - e * g)
+
+        t = -(f * (a * k - j * b) + e * (j * c - a * l) + d *
+              (b * l - k * c)) / M
+
+        if (t < ray.start or t > ray.end):
+            return no_hit
+
+        gamma = (i * (a * k - j * b) + h * (j * c - a * l) + g *
+                 (b * l - k * c)) / M
+
+        if (gamma < 0 or gamma > 1):
+            return no_hit
+
+        beta = (j * (e * i - h * f) + k * (g * f - d * i) +
+                l * (d * h - e * g)) / M
+
+        if (beta < 0 or beta > 1 - gamma):
+            return no_hit
+
+        P = ray_orig + t * ray_dir
+
+        unit_normal = normalize(np.cross(vs[0] - vs[2], vs[1] - vs[2]))
+
+        return Hit(t, P, unit_normal, self.material)
 
 
 class Camera:
@@ -178,7 +221,7 @@ class Camera:
         """Compute the ray corresponding to a point in the image.
 
         Parameters:
-          img_point : (2,) -- a 2D point in [0,1] x [0,1], where (0,0) is the lower left 
+          img_point : (2,) -- a 2D point in [0,1] x [0,1], where (0,0) is the lower left
                       corner of the image and (1,1) is the upper right
         Return:
           Ray -- The ray corresponding to that image location (not necessarily normalized)
@@ -222,28 +265,35 @@ class PointLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        #diffuse shading
-        intensity = self.intensity
-        position = self.position
-        normal = hit.normal
-        dist_to_source = np.linalg.norm(hit.point - position)
-        diffuse_coeff = hit.material.k_d
-        v = (-1) * normalize(ray.direction)
-        light_ray = normalize(position - hit.point)
-        specular_coeff = hit.material.k_s
-        p = hit.material.p
+        l = self.position - hit.point
+        epsilon = 0.000001
+        point = hit.point + l*epsilon
+        shadow_ray = Ray(point, l, epsilon, 1)
 
-        #diffuse shading
-        #diffuse_output = diffuse_coeff * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
-        #specular shading
-        #shadRay = Ray(hit.point, position - hit.point)
-        shade_ray = Ray(hit.point, light_ray)
-        if (scene.intersect(shade_ray).t == no_hit):
-            h = (v + light_ray) / np.linalg.norm(v + light_ray)
-            specular_output = (diffuse_coeff + specular_coeff * ((np.dot(normal, h)) ** p)) * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
-            return specular_output
-        else:
-            return (0,0,0)
+        if (scene.intersect(shadow_ray).t > 1):
+
+            # diffuse shading
+            intensity = self.intensity
+            position = self.position
+            normal = hit.normal
+            dist_to_source = np.linalg.norm(hit.point - position)
+            diffuse_coeff = hit.material.k_d
+            v = (-1) * normalize(ray.direction)
+            light_ray = normalize(position - hit.point)
+            specular_coeff = hit.material.k_s
+            p = hit.material.p
+
+            # diffuse shading
+            # diffuse_output = diffuse_coeff * (np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
+            # specular shading
+            shade_ray = Ray(hit.point, light_ray, epsilon)
+            if (scene.intersect(shade_ray).t == np.inf):
+                h = (v + light_ray) / np.linalg.norm(v + light_ray)
+                specular_output = (diffuse_coeff + specular_coeff * ((np.dot(normal, h)) ** p)) * (
+                    np.maximum(0, np.dot(normal, light_ray)) / (dist_to_source ** 2)) * intensity
+                return specular_output
+
+        return vec([0, 0, 0])
 
 
 class AmbientLight:
@@ -326,14 +376,28 @@ def shade(ray, hit, scene, lights, depth=0):
     """
     bg_color = scene.bg_color
 
-    #stub in shading
-    if (hit == no_hit):
-        return bg_color
-    else:
-        output = (0,0,0)
+    if (hit.t < np.inf):
+        output = vec([0, 0, 0])
+
+        if (depth < MAX_DEPTH):
+            normal = hit.normal
+            r_dir = ray.direction
+            normal = hit.normal
+            m_dir = r_dir - 2 * np.dot(r_dir, normal) * normal
+            m_ray = Ray(hit.point, m_dir, 0.0000001, np.inf)
+            m_hit = scene.intersect(m_ray)
+            if (m_hit != no_hit):
+                output = output + m_hit.material.k_m * \
+                    shade(m_ray, m_hit, scene, lights, depth + 1)
+
         for light in lights:
             output = output + light.illuminate(ray, hit, scene)
+
         return output
+
+    else:
+        return bg_color
+
 
 def render_image(camera, scene, lights, nx, ny):
     """Render a ray traced image.
@@ -348,21 +412,8 @@ def render_image(camera, scene, lights, nx, ny):
     """
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
-    bg_color = scene.bg_color
-    #step1
-    """surf = scene.surfs[0]
-    for x in range(0, nx):
-        for y in range(0, ny):
-            u = (x + 0.5) / nx
-            v = (y + 0.5) / ny
-            ray = camera.generate_ray((u, v))
-            if (surf.intersect(ray).t < np.inf):
-                img[y][x] = (255, 255, 255)
-            else:
-                img[y][x] = (0,0,0)"""
 
-    surfs = scene.surfs
-    for x in range (0, nx):
+    for x in range(0, nx):
         for y in range(0, ny):
             u = (x + 0.5) / nx
             v = (y + 0.5) / ny
