@@ -387,8 +387,10 @@ def shade(ray, hit, scene, lights, depth=0):
             m_ray = Ray(hit.point, m_dir, 0.0000001, np.inf)
             m_hit = scene.intersect(m_ray)
             if (m_hit != no_hit):
-                output = output + m_hit.material.k_m * \
+                output = output + hit.material.k_m * \
                     shade(m_ray, m_hit, scene, lights, depth + 1)
+            else:
+                output = output + hit.material.k_m * bg_color
 
         for light in lights:
             output = output + light.illuminate(ray, hit, scene)
